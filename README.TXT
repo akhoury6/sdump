@@ -5,15 +5,15 @@ SDUMP is an MSDOS utility that can take any file and dump it's contents over a s
 
 Insstallation:
 
-1. Download the latest release from Github and unzip it to any direectory you like. I recommend `C:\SDUMP`.
+1. Download the latest release from the Github releases page and unzip it to `C:\SDUMP`. You can find the releases here: https://github.com/akhoury6/sdump/releases
 
 2. Edit `SDUMP.INI` with the settings for your serial connection.
 
 3. Run `SDUMP.EXE <filename>` to pipe that file over the serial port you configured.
 
-Contributing:
+Running the latest build:
 
-This tool was built and compiled using Borland C++ 3.1 for MSDOS. Feel free to submit any PRs you like, but please make sure it's compatible with that compiler.
+If you'd like to build the codebase yourself, you'll need MS-DOS and a copy of Borland C++ 3.1. Make sure the `bcc` compiler is in your $PATH, then run `make` to compile the excutables.
 
 License:
 

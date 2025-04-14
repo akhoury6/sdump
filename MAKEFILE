@@ -1,19 +1,23 @@
-bcc_exe = C:\APPS\BC31\BIN\BCC.EXE
+bcc_exe = BCC
+bcc_opts = -1- -f- -ms -O1
+cppfiles = SERIAL.CPP SETTINGS.CPP UTIL.CPP
 
-build: SDUMP.EXE
+build: SDUMP.EXE SLOAD.EXE
 
 test: clean build
 	SDUMP.EXE testdata\testdata.txt
 
 SDUMP.EXE:
-	$(bcc_exe) -1- -f- -ms -O1 -eSDUMP.EXE *.CPP
-	del *.OBJ
+	$(bcc_exe) $(bcc_opts) -eSDUMP.EXE SDUMP.CPP $(cppfiles)
 
-package: SDUMP.EXE
+SLOAD.EXE:
+	$(bcc_exe) $(bcc_opts) -eSLOAD.EXE SLOAD.CPP $(cppfiles)
+
+package: build
 	mkdir SDUMP
 	copy SDUMP.EXE SDUMP\SDUMP.EXE
 	copy SDUMP.INI SDUMP\SDUMP.INI
-	zip -r SDUMP.ZIP SDUMP\
+	zip -r SDUMP.ZIP SDUMP
 
 clean:
 	del SDUMP.EXE

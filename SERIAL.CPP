@@ -77,7 +77,7 @@ SerialPort::~SerialPort() {
 	reset_port();
 }
 
-int SerialPort::init_port(unsigned int loopback) {
+int SerialPort::init_port(const unsigned int loopback) {
 	unsigned int lcr_value = 0x00;
 	if (byte_size == 5) {
 		lcr_value |= LCR_WL_5;
@@ -130,21 +130,22 @@ void SerialPort::reset_port() {
 }
 
 // Send a byte via the serial port and check if it is looped back
-int SerialPort::verify_loopback_byte(unsigned char data) {
-	while ((inportb(base_addr + 5) & 0x20) == 0);
-	outportb(base_addr, data);
-
-	// Wait for data to be received in the receiver buffer
-	while ((inportb(base_addr + 5) & 0x01) == 0);
-	unsigned char received = inportb(base_addr);
-
-	// Verify that the sent byte matches the received byte
-	return (data == received);
+int SerialPort::verify_loopback_byte(const unsigned char byte) {
+	send_byte(byte);
+	unsigned char received = recv_byte();
+	return (byte == received);
 }
 
-void SerialPort::send_byte(const char data) {
+void SerialPort::send_byte(const unsigned char byte) {
 	// Wait for the transmitter holding register to be empty
 	while ((inportb(base_addr + 5) & 0x20) == 0);
 	// Send the data
-	outportb(base_addr, data);
+	outportb(base_addr, byte);
+}
+
+unsigned char SerialPort::recv_byte() {
+	// Wait for data to be received in the receiver buffer
+	while ((inportb(base_addr + 5) & 0x01) == 0);
+	// Retrieve the byte
+	return inportb(base_addr);
 }

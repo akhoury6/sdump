@@ -10,12 +10,13 @@ int main() {
 	// Get ini filename
 	char* path = _argv[0];
 	unsigned int length = 0;
+	unsigned int last_backslash_idx = 0;
 	while (path[length] != '\0') {
+		if (path[length] == '\\') last_backslash_idx = length;
 		length++;
 	}
-	path[length - 3] = 'I';
-	path[length - 2] = 'N';
-	path[length - 1] = 'I';
+	path[last_backslash_idx + 1] = '\0';
+	strcat(path, "SDUMP.INI");
 
 	if (access(path, 0) != 0) {
 		cout << "ERROR: SDUMP.INI does not exist. Exiting." << endl;
@@ -33,6 +34,7 @@ int main() {
 		cout << "USAGE: SDUMP.EXE <filename to send>";
 		return 0;
 	}
+
 	if (access(datafile, 0) != 0) {
 		cout << "ERROR: The file " << datafile << " does not exist. Exiting." << endl;
 		return 1;
@@ -42,7 +44,7 @@ int main() {
 	Settings settings(path);
 	SerialPort serial(settings);
 
-	if (serial.init_port(1)) {
+	if (serial.init_port()) {
 		cout << "Serial port initialized. Ready." << endl;
 	} else {
 		cout << "Loopback test failed! Check the settings in SDUMP.INI and try again." << endl;
