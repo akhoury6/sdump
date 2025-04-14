@@ -3,7 +3,7 @@
 #include <iostream.h>
 #include <string.h>
 #include <stdlib.h>
-#include <math.h>
+#include "util.h"
 
 SerialPort::SerialPort(Settings settings) {
 	cout << "Serial Port Settings" << endl;
@@ -33,11 +33,8 @@ SerialPort::SerialPort(Settings settings) {
 	if (baud_rate == 0) {
 		cout << "INVALID BAUD RATE: " << baud_rate << endl << "Exiting." << endl;
 		exit(1);
-	} else if (baud_rate == 65535) {
-		divisor = 1;
-		cout << "115200";
 	} else {
-		divisor = ceil(115200.0 / baud_rate);
+		divisor = 115200 / baud_rate;
 		cout << 115200 / (unsigned long)divisor;
 	}
 	cout << endl;
@@ -76,26 +73,6 @@ SerialPort::SerialPort(Settings settings) {
 	cout << stop_bits << endl;
 
 	init_port(0);
-}
-
-unsigned int SerialPort::u_atoi(const char* string) {
-	if (string == NULL || strlen(string) == 0) return 0;
-	unsigned int result = 0;
-	for (int i = (strlen(string) - 1); i >= 0; i--) {
-		switch (string[i]) {
-			case '0': result += 0; break;
-			case '1': result += 1 * pow(10, strlen(string) - 1 - i); break;
-			case '2': result += 2 * pow(10, strlen(string) - 1 - i); break;
-			case '3': result += 3 * pow(10, strlen(string) - 1 - i); break;
-			case '4': result += 4 * pow(10, strlen(string) - 1 - i); break;
-			case '5': result += 5 * pow(10, strlen(string) - 1 - i); break;
-			case '6': result += 6 * pow(10, strlen(string) - 1 - i); break;
-			case '7': result += 7 * pow(10, strlen(string) - 1 - i); break;
-			case '8': result += 8 * pow(10, strlen(string) - 1 - i); break;
-			case '9': result += 9 * pow(10, strlen(string) - 1 - i); break;
-		}
-	}
-	return result;
 }
 
 SerialPort::~SerialPort() {

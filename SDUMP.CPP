@@ -42,13 +42,12 @@ int main() {
 	Settings settings(path);
 	SerialPort serial(settings);
 
-	if (serial.runLoopbackTest("Hello, COM2 serial port!\r\n")) {
+	if (serial.runLoopbackTest("Hello, serial port!")) {
 		cout << "Loopback test passed. Ready to send." << endl;;
 	} else {
 		cout << "Loopback test failed! Check the settings in SDUMP.INI and try again." << endl;
 		return 1;
 	}
-
 
 	FILE* file = fopen(datafile, "rb");
 	if (file == NULL) {
@@ -66,7 +65,7 @@ int main() {
 		counter++;
 		cout << "\033[D" << progress_chars[counter % 4];
 	}
-	cout << endl << "Done!";
+	cout << "\033[D" << ' ' << endl << "Done!";
 	fclose(file);
 
 	return 0;

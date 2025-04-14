@@ -100,7 +100,6 @@ class SerialPort {
 		void init_port(unsigned int loopback);
 		void reset_port();
 		unsigned int sendAndVerifyLoopbackByte(unsigned char data);
-		unsigned int u_atoi(const char* string);
 	public:
 		SerialPort(Settings settings);
 		~SerialPort();

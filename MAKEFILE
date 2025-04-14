@@ -1,11 +1,21 @@
+bcc_exe = C:\APPS\BC31\BIN\BCC.EXE
+
 build: SDUMP.EXE
 
 test: clean build
 	SDUMP.EXE testdata\testdata.txt
 
 SDUMP.EXE:
-	bcc -eSDUMP.EXE *.CPP
+	$(bcc_exe) -1- -f- -ms -O1 -eSDUMP.EXE *.CPP
 	del *.OBJ
+
+package: SDUMP.EXE
+	mkdir SDUMP
+	copy SDUMP.EXE SDUMP\SDUMP.EXE
+	copy SDUMP.INI SDUMP\SDUMP.INI
+	zip -r SDUMP.ZIP SDUMP\
 
 clean:
 	del SDUMP.EXE
+	del SDUMP.ZIP
+	deltree /y SDUMP

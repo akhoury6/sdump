@@ -1,5 +1,4 @@
 #include "settings.h"
-
 #include <fstream.h>
 #include <string.h>
 
