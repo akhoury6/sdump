@@ -1,0 +1,11 @@
+build: SDUMP.EXE
+
+test: clean build
+	SDUMP.EXE testdata\testdata.txt
+
+SDUMP.EXE:
+	bcc -eSDUMP.EXE *.CPP
+	del *.OBJ
+
+clean:
+	del SDUMP.EXE
