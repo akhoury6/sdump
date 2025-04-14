@@ -97,15 +97,13 @@ class SerialPort {
 			ODD,
 			EVEN
 		} parity;
-		void init_port(unsigned int loopback);
 		void reset_port();
-		unsigned int sendAndVerifyLoopbackByte(unsigned char data);
+		int verify_loopback_byte(unsigned char data);
 	public:
 		SerialPort(Settings settings);
 		~SerialPort();
-		void send_byte(unsigned char data);
-		void send_data(const char* data);
-		unsigned int runLoopbackTest(const char* testString);
+		int init_port(unsigned int loopback = 0);
+		void send_byte(const char data);
 };
 
 #endif

@@ -42,8 +42,8 @@ int main() {
 	Settings settings(path);
 	SerialPort serial(settings);
 
-	if (serial.runLoopbackTest("Hello, serial port!")) {
-		cout << "Loopback test passed. Ready to send." << endl;;
+	if (serial.init_port(1)) {
+		cout << "Serial port initialized. Ready." << endl;
 	} else {
 		cout << "Loopback test failed! Check the settings in SDUMP.INI and try again." << endl;
 		return 1;
@@ -56,16 +56,16 @@ int main() {
 	}
 
 	unsigned char byte;
-	cout << "Sending file over serial port...  ";
+	cout << "Sending file over serial port...  " << endl;
 	char progress_chars[5] = { '|', '/', '-', '\\', '\0' };
-	unsigned int counter = 0;
+	unsigned long counter = 0;
 
 	while (fread(&byte, sizeof(unsigned char), 1, file) == 1) {
 		serial.send_byte(byte);
 		counter++;
 		cout << "\033[D" << progress_chars[counter % 4];
 	}
-	cout << "\033[D" << ' ' << endl << "Done!";
+	cout << '\r' << "Done!" << endl;
 	fclose(file);
 
 	return 0;

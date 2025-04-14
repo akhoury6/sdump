@@ -71,17 +71,13 @@ SerialPort::SerialPort(Settings settings) {
 		exit(1);
 	}
 	cout << stop_bits << endl;
-
-	init_port(0);
 }
 
 SerialPort::~SerialPort() {
 	reset_port();
 }
 
-void SerialPort::init_port(unsigned int loopback = 0) {
-	reset_port();
-
+int SerialPort::init_port(unsigned int loopback) {
 	unsigned int lcr_value = 0x00;
 	if (byte_size == 5) {
 		lcr_value |= LCR_WL_5;
@@ -105,16 +101,25 @@ void SerialPort::init_port(unsigned int loopback = 0) {
 		lcr_value |= LCR_STOPB_2;
 	}
 
-	unsigned int mcr_value = MCR_DTR | MCR_RTS | MCR_OUT2;
-	if (loopback) mcr_value |= MCR_LOOPBACK;
+	unsigned int mcr_normal = MCR_DTR | MCR_RTS | MCR_OUT1 | MCR_OUT2;
+	unsigned int mcr_testing = MCR_LOOPBACK | MCR_RTS | MCR_OUT1 | MCR_OUT2;
 
-	outportb(base_addr + 3, LCR_DLAB_E); // Enable DLAB (set baud rate divisor)
-	outportb(base_addr + 0, divisor & 0x00ff); // Use a bitmask to get the low bytes of the baud rate divisor
-	outportb(base_addr + 1, divisor >> 8); // Shift to get the high bytes of the divisor
-	outportb(base_addr + 3, LCR_DLAB_D | lcr_value); // Disable DLAB and set LCR parameters
-	outportb(base_addr + 2, FIFO_ENABLE | FIFO_CLR | FIFO_CLT | FIFO_RTL_14); // Enable FIFO, clear, with 14-byte threshold
-	outportb(base_addr + 4, mcr_value);
-	// outportb(base_addr + 1, 0x01); // Enable Received Data Available interrupt
+	// Initialize port
+	outportb(base_addr + 1, IER_DISABLE);             // Disable all interrupts
+	outportb(base_addr + 3, LCR_DLAB_E);              // Enable DLAB (set baud rate divisor)
+	outportb(base_addr + 0, divisor & 0x00ff);        // Use a bitmask to get the low byte of the baud rate divisor
+	outportb(base_addr + 1, divisor >> 8);            // Shift to get the high byte of the divisor
+	outportb(base_addr + 3, LCR_DLAB_D | lcr_value);  // Disable DLAB and set word length, stop bits, and parity
+	outportb(base_addr + 2, FIFO_ENABLE | FIFO_CLR | FIFO_CLT | FIFO_RTL_14); // Enable FIFO, clear them, with 14-byte threshold
+
+	// Test hardware with loopback
+	outportb(base_addr + 4, mcr_testing);             // Set in loopback mode, test the serial chip
+	if (!verify_loopback_byte(0xA5)) return 0;
+	if (!verify_loopback_byte(0x5A)) return 0;
+
+	// Disable loopback and prepare for normal operation
+  if (!loopback) outportb(base_addr + 4, mcr_normal);
+  return 1;
 }
 
 void SerialPort::reset_port() {
@@ -125,7 +130,7 @@ void SerialPort::reset_port() {
 }
 
 // Send a byte via the serial port and check if it is looped back
-unsigned int SerialPort::sendAndVerifyLoopbackByte(unsigned char data) {
+int SerialPort::verify_loopback_byte(unsigned char data) {
 	while ((inportb(base_addr + 5) & 0x20) == 0);
 	outportb(base_addr, data);
 
@@ -137,30 +142,9 @@ unsigned int SerialPort::sendAndVerifyLoopbackByte(unsigned char data) {
 	return (data == received);
 }
 
-// Run a test by sending a string in loopback mode and verifying it
-unsigned int SerialPort::runLoopbackTest(const char* testString) {
-	init_port(1);
-	const char* ptr = testString;
-	while (*ptr) {
-		if (!sendAndVerifyLoopbackByte(*ptr)) {
-			return 0;  // Test failed if any character does not match
-		}
-		ptr++;
-	}
-	init_port(0);
-	return 1;  // Test passed if all characters match
-}
-
-void SerialPort::send_byte(unsigned char data) {
+void SerialPort::send_byte(const char data) {
 	// Wait for the transmitter holding register to be empty
 	while ((inportb(base_addr + 5) & 0x20) == 0);
 	// Send the data
 	outportb(base_addr, data);
-}
-
-void SerialPort::send_data(const char* data) {
-	while (*data) {
-		send_byte(*data);
-		data++;
-	}
 }
