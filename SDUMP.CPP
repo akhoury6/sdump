@@ -3,10 +3,20 @@
 #include <stdio.h>
 #include <io.h>
 #include <string.h>
+#include <signal.h>
+#include <stdlib.h>
 #include "settings.h"
 #include "serial.h"
 
+int exit_flag = 0;
+
+void signal_handler(int signum) {
+	if (signum == SIGINT) exit_flag = 1;
+}
+
 int main() {
+	cout << "SDUMP  Copyright (C) 2025  Andrew Khoury" << endl << endl;
+	signal(SIGINT, signal_handler);
 	// Get ini filename
 	char* path = _argv[0];
 	unsigned int length = 0;
@@ -25,12 +35,6 @@ int main() {
 
 	char* datafile = _argv[1];
 	if (strcmp(datafile, "") == 0) {
-  	cout << "SDUMP  Copyright (C) 2025  Andrew Khoury" << endl;
-    cout << "This program comes with ABSOLUTELY NO WARRANTY." << endl;
-    cout << "This is free software, and you are welcome to redistribute it" << endl;
-    cout << "under certain conditions; see the full license" << endl;
-    cout << "at https://github.com/akhoury6/sdump for more information." << endl;
-    cout << endl;
 		cout << "USAGE: SDUMP.EXE <filename to send>";
 		return 0;
 	}
@@ -47,7 +51,7 @@ int main() {
 	if (serial.init_port()) {
 		cout << "Serial port initialized. Ready." << endl;
 	} else {
-		cout << "Loopback test failed! Check the settings in SDUMP.INI and try again." << endl;
+		cout << "Serial port initialization failed! Exiting." << endl;
 		return 1;
 	}
 
@@ -57,18 +61,22 @@ int main() {
 		return 1;
 	}
 
-	unsigned char byte;
-	cout << "Sending file over serial port...  " << endl;
+	cout << endl << "Sending file over serial port. Press Ctrl+C to cancel..." << endl;
 	char progress_chars[5] = { '|', '/', '-', '\\', '\0' };
-	unsigned long counter = 0;
+	unsigned int counter = 0;
+	unsigned char byte;
 
-	while (fread(&byte, sizeof(unsigned char), 1, file) == 1) {
-		serial.send_byte(byte);
+	while (!exit_flag && (fread(&byte, sizeof(unsigned char), 1, file) == 1)) {
+		cout << '\r' << progress_chars[counter % 4];
 		counter++;
-		cout << "\033[D" << progress_chars[counter % 4];
+		if (serial.send_byte(byte)) {
+			cout << progress_chars[counter % 4];
+		}
 	}
-	cout << '\r' << "Done!" << endl;
+
+	if (exit_flag) cout << '\r' << "Stopped." << flush; else cout << '\r' << "Done!" << flush;
 	fclose(file);
+	serial.reset_port();
 
 	return 0;
 }

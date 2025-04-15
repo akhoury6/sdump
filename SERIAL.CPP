@@ -66,7 +66,7 @@ SerialPort::SerialPort(Settings settings) {
 
 	cout << "Stop Bits:  ";
 	stop_bits = u_atoi(settings.getParameter("stop_bits"));
-	if (stop_bits != 1 && stop_bits != 0) {
+	if (stop_bits != 1 && stop_bits != 2) {
 		cout << "INVALID STOP BITS: " << stop_bits << endl << "Exiting." << endl;
 		exit(1);
 	}
@@ -112,40 +112,43 @@ int SerialPort::init_port(const unsigned int loopback) {
 	outportb(base_addr + 3, LCR_DLAB_D | lcr_value);  // Disable DLAB and set word length, stop bits, and parity
 	outportb(base_addr + 2, FIFO_ENABLE | FIFO_CLR | FIFO_CLT | FIFO_RTL_14); // Enable FIFO, clear them, with 14-byte threshold
 
-	// Test hardware with loopback
-	outportb(base_addr + 4, mcr_testing);             // Set in loopback mode, test the serial chip
-	if (!verify_loopback_byte(0xA5)) return 0;
-	if (!verify_loopback_byte(0x5A)) return 0;
+	// We set the Modem Control Register based on whether we are performing loopback testing or not
+	if (loopback) {
+		outportb(base_addr + 4, mcr_testing);
+	} else {
+		outportb(base_addr + 4, mcr_normal);
+	}
 
-	// Disable loopback and prepare for normal operation
-  if (!loopback) outportb(base_addr + 4, mcr_normal);
-  return 1;
+	return 1;
 }
 
 void SerialPort::reset_port() {
+	outportb(base_addr + 1, IER_DISABLE); // Disable all interrupts
+	outportb(base_addr + 2, FIFO_DISABLE); // Disable FIFO buffers
 	outportb(base_addr + 3, LCR_CLEAR); // Clear DLAB and set 5 bits, no parity, one stop bit
 	outportb(base_addr + 4, MCR_CLEAR); // Disable RTS/DSR and IRQs
-	outportb(base_addr + 2, FIFO_DISABLE); // Disable FIFO buffers
-	outportb(base_addr + 1, IER_DISABLE); // Disable all interrupts
 }
 
-// Send a byte via the serial port and check if it is looped back
-int SerialPort::verify_loopback_byte(const unsigned char byte) {
-	send_byte(byte);
-	unsigned char received = recv_byte();
-	return (byte == received);
-}
-
-void SerialPort::send_byte(const unsigned char byte) {
+unsigned char SerialPort::send_byte(const unsigned char byte) {
 	// Wait for the transmitter holding register to be empty
 	while ((inportb(base_addr + 5) & 0x20) == 0);
 	// Send the data
 	outportb(base_addr, byte);
+	return 1;
 }
 
-unsigned char SerialPort::recv_byte() {
+unsigned char SerialPort::recv_byte(unsigned char* byte) {
 	// Wait for data to be received in the receiver buffer
-	while ((inportb(base_addr + 5) & 0x01) == 0);
+	if ((inportb(base_addr + 5) & 0x01) == 0) return 0;
 	// Retrieve the byte
-	return inportb(base_addr);
+	*byte = inportb(base_addr);
+	return 1;
+}
+
+// Send a byte via the serial port and check if it is looped back
+int SerialPort::verify_loopback_byte(const unsigned char byte) {
+	while (!send_byte(byte));
+	unsigned char received = byte + 1;
+	while (!recv_byte(&received));
+	return (byte == received);
 }

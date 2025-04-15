@@ -83,9 +83,6 @@
 // Enable loopback mode
 #define MCR_LOOPBACK 0x10
 
-//Baud Rates
-
-
 class SerialPort {
 	private:
 		unsigned int base_addr;
@@ -97,14 +94,16 @@ class SerialPort {
 			ODD,
 			EVEN
 		} parity;
-		void reset_port();
-		int verify_loopback_byte(const unsigned char byte);
 	public:
 		SerialPort(Settings settings);
 		~SerialPort();
+
 		int init_port(const unsigned int loopback = 0);
-		void send_byte(const unsigned char data);
-		unsigned char recv_byte();
+		void reset_port();
+
+		unsigned char send_byte(const unsigned char data);
+		unsigned char recv_byte(unsigned char* byte);
+		int verify_loopback_byte(const unsigned char byte);
 };
 
 #endif

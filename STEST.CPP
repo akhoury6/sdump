@@ -15,7 +15,7 @@ void signal_handler(int signum) {
 }
 
 int main() {
-	cout << "SLOAD  Copyright (C) 2025  Andrew Khoury" << endl << endl;
+	cout << "STEST  Copyright (C) 2025  Andrew Khoury" << endl << endl;
 	signal(SIGINT, signal_handler);
 	// Get ini filename
 	char* path = _argv[0];
@@ -33,45 +33,39 @@ int main() {
 		return 1;
 	}
 
-	char* datafile = _argv[1];
-	if (strcmp(datafile, "") == 0) {
-		cout << "USAGE: SLOAD.EXE <filename to write>";
-		return 0;
-	}
-
 	// Load the settings
 	Settings settings(path);
 	SerialPort serial(settings);
 
-	if (serial.init_port()) {
+	if (serial.init_port(1)) {
 		cout << "Serial port initialized. Ready." << endl;
 	} else {
 		cout << "Serial port initialization failed! Exiting." << endl;
 		return 1;
 	}
 
-	FILE* file = fopen(datafile, "wb");
-	if (file == NULL) {
-		cout << "Failed to open file '" << datafile << "'." << endl;
-		return 1;
-	}
-
-	cout << endl << "Saving data from serial port to file. Press Ctrl+C to stop..." << endl;
+	cout << endl << "Testing loopback. Press Ctrl+C to stop..." << endl;;
 	char progress_chars[5] = { '|', '/', '-', '\\', '\0' };
 	unsigned short counter = 0;
-	unsigned char byte;
+	unsigned char byte = 0;
 
 	while (!exit_flag) {
 		cout << '\r' << progress_chars[counter % 4];
 		counter++;
-		if (serial.recv_byte(&byte)) {
-			fwrite(&byte, sizeof(unsigned char), 1, file);
+		if (!serial.verify_loopback_byte(byte)) {
+			cout << '\r' << "Failed!" << flush;
+			break;
+		} else {
 			cout << progress_chars[counter % 4];
+		}
+		byte++;
+		if (byte == 0) {
+			cout << '\r' << "Passed!" << flush;
+			break;
 		}
 	}
 
-	cout << '\r' << "Stopped." << flush;
-	fclose(file);
+	if (exit_flag) cout << '\r' << "Stopped." << flush;
 	serial.reset_port();
 
 	return 0;

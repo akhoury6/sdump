@@ -3,6 +3,12 @@ SDUMP
 
 SDUMP is an MSDOS utility that can take any file and dump it's contents over a serial port.
 
+SLOAD can likewise be used to accept raw data from a serial port and dump it to a file.
+
+STEST will run a loopback test on your serial port to ensure that the UART is functioning.
+
+These tools add no protocol of their own and only send/receive the raw data provided to them.
+
 Insstallation:
 
 1. Download the latest release from the Github releases page and unzip it to `C:\SDUMP`. You can find the releases here: https://github.com/akhoury6/sdump/releases
